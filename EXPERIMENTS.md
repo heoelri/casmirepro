@@ -32,6 +32,17 @@ ActivityId: 123de185-9da0-4404-a880-71f6f58a6634, Microsoft.Azure.Documents.Comm
 * `cassandraDiskCapacity` set to `4`
 * `cassandraNodeCount` set to `3`
 
+**Result:**
+
+```console
+{"code":"BadRequest","message":"Managed Instance for Apache Cassandra is not available in region East US 2. For a list of available regions, see https://aka.ms/CassandraMISupportedRegions.\r\nActivityId: 21db178a-1eec-4894-8e57-7fc65b3d69c9, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0, Microsoft.Azure.Documents.Common/2.14.0"}
+```
+
+
+* **Correlation ID:** `3e7abfc6-0872-47ed-8b38-f10da8bb96c2`
+* **Start time:** `9.10.2024, 09:35:53`
+
+
 ## 3) casmi_v2 to uksouth
 
 `casmi_v2.bicep` with the following parameters set:
