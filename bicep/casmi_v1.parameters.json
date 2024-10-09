@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "uksouth"
+    },
+    "tags": {
+      "value": {}
+    },
+    "zoneRedundancy": {
+      "value": false
+    },
+    "cassandraSku": {
+      "value": "Standard_E16s_v5"
+    },
+    "cassandraDiskSku": {
+      "value": "P30"
+    },
+    "cassandraDiskCapacity": {
+      "value": 4
+    },
+    "cassandraNodeCount": {
+      "value": 3
+    },
+    "resourceSuffix": {
+      "value": "uks-test-1"
+    }
+  }
+}
