@@ -77,7 +77,7 @@ resource graphCassandraClusterDataCenter 'Microsoft.DocumentDB/cassandraClusters
 
 resource cosmosNetworkContributorAuthorization 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(resourceGroup().id, resourceGroup().name, networkContributorRoleId, cosmosDbPrincipalId)
-  scope: snet_cassandra
+  scope: vnet // snet_cassandra
   properties: {
     principalId: cosmosDbPrincipalId
     principalType: 'ServicePrincipal'

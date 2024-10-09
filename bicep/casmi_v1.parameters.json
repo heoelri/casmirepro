@@ -12,7 +12,7 @@
       "value": false
     },
     "cassandraSku": {
-      "value": "Standard_E16s_v5"
+      "value": "Standard_E16s_v4"
     },
     "cassandraDiskSku": {
       "value": "P30"
@@ -24,7 +24,7 @@
       "value": 3
     },
     "resourceSuffix": {
-      "value": "uks-test-1"
+      "value": "eus2-test-1"
     }
   }
 }
