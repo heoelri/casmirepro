@@ -3,6 +3,7 @@
 ## Versions
 
 * `casmi_v1.bicep` uses `Microsoft.DocumentDB/cassandraClusters@2024-05-15` which is the latest version documented in the public [ARM Reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.documentdb/cassandraclusters?pivots=deployment-language-arm-template)
+* `casmi_v2.bicep` uses `Microsoft.DocumentDB/cassandraClusters@2021-03-01-preview`
 
 ## How to deploy?
 
@@ -11,5 +12,5 @@ az login
 
 az group create -n <rgname> -l <location>
 
-az deployment group create --resource-group <rgname> --template-file .\bicep\casmi_v1.bicep --parameters .\bicep\casmi_v1.parameters.json --name localtest01-with-whatif2024
+az deployment group create --resource-group <rgname> --template-file .\bicep\casmi_v1.bicep --parameters .\bicep\casmi_v1.parameters.json --name localtest01-withoutwhatif-102024
 ```
