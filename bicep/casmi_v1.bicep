@@ -23,7 +23,7 @@ param resourceSuffix string
 
 // Variables
 var networkContributorRoleDefinitionId = '4d97b98b-1d4f-4787-a291-c67834d212e7' // Azure Network Contributor Role Definition Id
-var cosmosDbPrincipalId = 'e5007d2c-4b13-4a74-9b6a-605d99f03501' // AppId 'a232010e-820c-4083-83bb-3ace5fc29d0b' (Azure CosmosDB)
+var cosmosDbPrincipalId = 'a232010e-820c-4083-83bb-3ace5fc29d0b' // (Azure CosmosDB) objectId 'e5007d2c-4b13-4a74-9b6a-605d99f03501'
 var networkContributorRoleId = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
   networkContributorRoleDefinitionId

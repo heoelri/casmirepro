@@ -1,0 +1,226 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deployment_option": {
+      "type": "string",
+      "defaultValue": "0"
+    },
+    "cluster_name": {
+      "type": "String",
+      "metadata": {
+        "description": "The name for the Cassandra cluster to be created."
+      }
+    },
+    "location": {
+      "type": "String",
+      "metadata": {
+        "description": "Region to create the cluster in."
+      }
+    },
+    "initial_cassandra_admin_password": {
+      "type": "SecureString",
+      "metadata": {
+        "description": "Initial password to set on the cluster for the admin account."
+      }
+    },
+    "dc_name": {
+      "type": "String",
+      "metadata": {
+        "description": "The name for the Cassandra data center to be created."
+      }
+    },
+    "node_count": {
+      "type": "Int",
+      "metadata": {
+        "description": "The number of nodes to create in this cluster."
+      }
+    },
+    "enable_availability_zones": {
+      "defaultValue": true,
+      "type": "Bool",
+      "metadata": {
+        "description": "Deploy data centers using availability zones if available in the region."
+      }
+    },
+    "sku": {
+      "defaultValue": "Standard_DS14_v2",
+      "type": "String",
+      "metadata": {
+        "description": "What virtual machine SKU to deploy the data center on."
+      }
+    },
+    "disk_sku": {
+      "defaultValue": "P30",
+      "type": "String",
+      "metadata": {
+        "description": "What disk SKU the Cassandra data storage should be deployed on."
+      }
+    },
+    "disk_capacity": {
+      "defaultValue": 4,
+      "type": "Int",
+      "metadata": {
+        "description": "Number of data disks to attach to each Cassandra node."
+      }
+    },
+    "identity_type": {
+      "defaultValue": "none",
+      "type": "String",
+      "metadata": {
+        "description": "Type of identity to use."
+      }
+    },
+    "client_certificates": {
+      "defaultValue": [],
+      "type": "Array",
+      "metadata": {
+        "description": "Client certificate used to authenticate to Cassandra API."
+      }
+    },
+    "cassandra_version": {
+      "defaultValue": "4.0",
+      "type": "String",
+      "metadata": {
+        "description": "Version of Cassandra used."
+      }
+    },
+    "vnet_name": {
+      "type": "String",
+      "metadata": {
+        "description": "The name of the vNet."
+      }
+    },
+    "subnet_name": {
+      "defaultValue": "default",
+      "type": "String",
+      "metadata": {
+        "description": "The name of the subnet."
+      }
+    },
+    "cosmos_db_principal_id": {
+      "defaultValue": "default",
+      "type": "String",
+      "metadata": {
+        "description": "The CosmosDB principal Id that needs access to vNet."
+      }
+    },
+    "base64_encoded_cassandra_yaml_fragment": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Base64 encoded Cassandra configuration as a YAML fragment. Applied to the data center."
+      }
+    },
+    "ev2shell_msi_resourceid": {
+        "type": "string"
+    }
+  },
+  "variables": {
+    "network_contributor_role_id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
+    "effective_management_subnet_id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/virtualNetworks/', parameters('vnet_name'), '/subnets/', parameters('subnet_name'))]",
+    "subnet_segments": "[split(variables('effective_management_subnet_id'), '/')]",
+    "subnet_subscription_id": "[variables('subnet_segments')[2]]",
+    "subnet_resource_group": "[variables('subnet_segments')[4]]",
+    "subdeployment_name": "[concat(substring(deployment().name, 25), '-cassandra-vnet')]",
+    "is-annotations-processing-enabled": "[equals(parameters('deployment_option'), '0')]",
+    "is-graph-processing-enabled": "[equals(parameters('deployment_option'), '1')]",
+    "is-graph-cassandra": "[contains(parameters('cluster_name'), 'graph')]",
+    "is-graph-cassandra-enabled": "[and(variables('is-graph-processing-enabled'), variables('is-graph-cassandra'))]",
+    "is-transaction-cassandra-enabled": "[or(variables('is-graph-processing-enabled'), variables('is-annotations-processing-enabled'))]",
+    "builtInReaderRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]"
+  },
+  "resources": [
+    {
+      "condition": "[or(variables('is-graph-cassandra-enabled'), variables('is-transaction-cassandra-enabled'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('subdeployment_name')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[guid(variables('effective_management_subnet_id'), 'assign-cosmosdb-network-contributor')]",
+              "scope": "[variables('effective_management_subnet_id')]",
+              "properties": {
+                "roleDefinitionId": "[variables('network_contributor_role_id')]",
+                "principalId": "[parameters('cosmos_db_principal_id')]",
+                "principalType": "ServicePrincipal",
+                "description": "Allow Azure CosmosDB to attach NICs to this virtual network."
+              }
+            }
+          ]
+        }
+      },
+      "subscriptionId": "[variables('subnet_subscription_id')]",
+      "resourceGroup": "[variables('subnet_resource_group')]"
+    },
+    {
+      "condition": "[or(variables('is-graph-cassandra-enabled'), variables('is-transaction-cassandra-enabled'))]",
+      "type": "Microsoft.DocumentDB/cassandraClusters",
+      "apiVersion": "2021-03-01-preview",
+      "name": "[parameters('cluster_name')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('subdeployment_name')]"
+      ],
+      "identity": {
+        "type": "[parameters('identity_type')]"
+      },
+      "properties": {
+        "initialCassandraAdminPassword": "[parameters('initial_cassandra_admin_password')]",
+        "delegatedManagementSubnetId": "[variables('effective_management_subnet_id')]",
+        "clientCertificates": "[parameters('client_certificates')]",
+        "cassandraVersion": "[parameters('cassandra_version')]",
+        "retryPolicy": {
+          "maxRetryCount": 5,
+          "retryIntervalInSeconds": 180
+        }
+      }
+    },
+    {
+      "condition": "[or(variables('is-graph-cassandra-enabled'), variables('is-transaction-cassandra-enabled'))]",
+      "type": "Microsoft.DocumentDB/cassandraClusters/dataCenters",
+      "apiVersion": "2021-03-01-preview",
+      "name": "[concat(parameters('cluster_name'), '/', parameters('dc_name'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[parameters('cluster_name')]",
+        "[resourceId('Microsoft.DocumentDB/cassandraClusters', parameters('cluster_name'))]"
+      ],
+      "properties": {
+        "dataCenterLocation": "[parameters('location')]",
+        "delegatedSubnetId": "[variables('effective_management_subnet_id')]",
+        "nodeCount": "[parameters('node_count')]",
+        "availabilityZone": "[parameters('enable_availability_zones')]",
+        "sku": "[parameters('sku')]",
+        "diskSku": "[parameters('disk_sku')]",
+        "diskCapacity": "[parameters('disk_capacity')]",
+        "retryPolicy": {
+          "maxRetryCount": 5,
+          "retryIntervalInSeconds": 180
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(parameters('cluster_name'), parameters('ev2shell_msi_resourceid'), 'ReaderRoleAssignment')]",
+      "scope": "[concat('Microsoft.DocumentDB/cassandraClusters', '/', parameters('cluster_name'))]",
+      "properties": {
+        "roleDefinitionId": "[variables('builtInReaderRoleId')]",
+        "principalId": "[reference(parameters('ev2shell_msi_resourceid'), '2022-01-31-preview', 'full').properties.principalId]",
+      },
+      "dependsOn": [
+        "[parameters('cluster_name')]",
+        "[resourceId('Microsoft.DocumentDB/cassandraClusters', parameters('cluster_name'))]"
+      ]
+    }
+  ],
+  "outputs": {}
+}
